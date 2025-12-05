@@ -87,7 +87,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange }) 
         <div className="relative">
           <button
             onClick={() => setShowEngineMenu(!showEngineMenu)}
-            className="flex items-center justify-center h-full px-4 rounded-l-2xl hover:bg-white/10 transition-colors border-r border-white/10"
+            className="flex items-center justify-center h-full px-4 rounded-l-2xl hover:text-white/90 transition-colors border-r border-white/10 focus:outline-none focus:ring-0 active:bg-white/5 active:outline-none"
           >
             <img src={engine.logo} alt={engine.name} className="w-5 h-5 rounded-full" />
             <ChevronDown size={14} className="ml-2 text-white/70" />
@@ -103,7 +103,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange }) 
                     onEngineChange(eng.type);
                     setShowEngineMenu(false);
                   }}
-                  className={`flex items-center w-full px-4 py-3 text-sm text-left hover:bg-white/10 transition-colors ${currentEngine === eng.type ? 'bg-white/10 text-white' : 'text-gray-300'}`}
+                  className={`flex items-center w-full px-4 py-3 text-sm text-left hover:bg-white/10 active:bg-white/15 transition-colors ${currentEngine === eng.type ? 'bg-white/10 text-white' : 'text-gray-300'}`}
                 >
                   <img src={eng.logo} alt={eng.name} className="w-4 h-4 mr-3 rounded-full" />
                   {eng.name}

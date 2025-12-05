@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Tab King",
+  "version": "1.0.0",
+  "description": "A beautiful custom new tab page with search functionality",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "permissions": [],
+  "icons": {
+    "16": "favicon.ico",
+    "48": "favicon.ico",
+    "128": "favicon.ico"
+  }
+}

@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Edit } from 'lucide-react';
 import { Shortcut, GridConfig } from '../types';
-import { getFaviconUrl } from '../constants';
+import { getFaviconUrl, checkFaviconExists } from '../constants';
 
 // Global cache for failed favicons to prevent flicker/re-fetching
 const FAILED_FAVICONS = new Set<string>();
@@ -12,6 +12,7 @@ interface ShortcutGridProps {
   gridConfig: GridConfig;
   onAddShortcut: (shortcut: Shortcut) => void;
   onRemoveShortcut: (id: string) => void;
+  onEditShortcut: (id: string, title: string, url: string) => void;
   onReorderShortcuts: (dragId: string, targetId: string) => void;
   onMergeShortcuts: (dragId: string, dropId: string) => void;
   onRemoveFromFolder: (folderId: string, itemId: string) => void;
@@ -21,18 +22,53 @@ interface ShortcutGridProps {
 const ShortcutIcon = ({ url, title, size = 'default' }: { url: string, title: string, size?: 'default' | 'small' }) => {
   const faviconUrl = getFaviconUrl(url);
   const [imgError, setImgError] = useState(FAILED_FAVICONS.has(faviconUrl));
+  const [isChecking, setIsChecking] = useState(false);
   
-  // Reset error state if url changes
+  // Reset error state if url changes and check favicon asynchronously
   useEffect(() => {
-    if (FAILED_FAVICONS.has(faviconUrl)) {
+    const checkFavicon = async () => {
+      if (FAILED_FAVICONS.has(faviconUrl)) {
         setImgError(true);
-    } else {
-        setImgError(false);
-    }
-  }, [faviconUrl]);
+        return;
+      }
+      
+      if (!faviconUrl) {
+        setImgError(true);
+        return;
+      }
+      
+      setIsChecking(true);
+      try {
+        const exists = await checkFaviconExists(url);
+        if (!exists) {
+          FAILED_FAVICONS.add(faviconUrl);
+          setImgError(true);
+        } else {
+          setImgError(false);
+        }
+      } catch (error) {
+        // If check fails, assume favicon doesn't exist
+        FAILED_FAVICONS.add(faviconUrl);
+        setImgError(true);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+    
+    checkFavicon();
+  }, [faviconUrl, url]);
 
   const iconSizeClass = size === 'default' ? 'w-[60%] h-[60%]' : 'w-full h-full'; // Inner icon relative size
   const textSizeClass = size === 'default' ? 'text-2xl' : 'text-[10px] leading-none';
+
+  // Show loading state while checking favicon
+  if (isChecking) {
+    return (
+      <div className={`${iconSizeClass} flex items-center justify-center bg-white/10 rounded-full animate-pulse`}>
+        <div className="w-4 h-4 bg-white/20 rounded-full"></div>
+      </div>
+    );
+  }
 
   if (!imgError) {
     return (
@@ -75,6 +111,7 @@ const FolderPreview = ({ children }: { children: Shortcut[] }) => {
 const ShortcutItem = ({ 
     shortcut, 
     onRemove, 
+    onEdit,
     onClickFolder,
     isMergeTarget,
     isReorderTarget,
@@ -86,6 +123,7 @@ const ShortcutItem = ({
 }: { 
     shortcut: Shortcut, 
     onRemove: (id: string) => void,
+    onEdit: (id: string) => void,
     onClickFolder: (s: Shortcut) => void,
     isMergeTarget: boolean,
     isReorderTarget: boolean,
@@ -139,6 +177,18 @@ const ShortcutItem = ({
         onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            onEdit(shortcut.id);
+        }}
+        className="absolute top-1 left-3 p-1.5 bg-blue-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-200 transform hover:scale-110 shadow-lg z-20 hover:bg-blue-600"
+        title="Edit"
+      >
+        <Edit size={12} strokeWidth={3} />
+      </button>
+      
+      <button
+        onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             onRemove(shortcut.id);
         }}
         className="absolute top-1 right-3 p-1.5 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-200 transform hover:scale-110 shadow-lg z-20 hover:bg-red-600"
@@ -155,14 +205,19 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
     gridConfig, 
     onAddShortcut, 
     onRemoveShortcut, 
+    onEditShortcut,
     onReorderShortcuts,
     onMergeShortcuts,
     onRemoveFromFolder,
     onMoveToRoot
 }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingShortcut, setEditingShortcut] = useState<Shortcut | null>(null);
   const [newUrl, setNewUrl] = useState('');
   const [newName, setNewName] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editName, setEditName] = useState('');
   
   // DnD State
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -211,6 +266,45 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
       setIsAdding(false);
       setNewUrl('');
       setNewName('');
+  }
+
+  const openEditModal = (shortcut: Shortcut) => {
+      setEditingShortcut(shortcut);
+      setEditName(shortcut.title);
+      setEditUrl(shortcut.url || '');
+      setIsEditing(true);
+  }
+
+  const handleEditShortcut = (id: string) => {
+      const shortcut = shortcuts.find(s => s.id === id);
+      if (shortcut) {
+          openEditModal(shortcut);
+      }
+  }
+
+  const closeEditModal = () => {
+      setIsEditing(false);
+      setEditingShortcut(null);
+      setEditName('');
+      setEditUrl('');
+  }
+
+  const handleEdit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingShortcut || !editName) return;
+
+      if (editingShortcut.type === 'folder') {
+          // For folders, only update the name
+          onEditShortcut(editingShortcut.id, editName, editingShortcut.url || '');
+      } else {
+          // For links, update both name and URL
+          let formattedUrl = editUrl;
+          if (!/^https?:\/\//i.test(formattedUrl)) {
+              formattedUrl = 'https://' + formattedUrl;
+          }
+          onEditShortcut(editingShortcut.id, editName, formattedUrl);
+      }
+      closeEditModal();
   }
 
   // --- Drag and Drop Handlers ---
@@ -295,6 +389,7 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
             key={shortcut.id} 
             shortcut={shortcut} 
             onRemove={onRemoveShortcut}
+            onEdit={handleEditShortcut}
             onClickFolder={setOpenFolder}
             onItemDragStart={handleDragStart}
             onItemDragOver={handleDragOver}
@@ -369,6 +464,62 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
                   className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors font-medium disabled:opacity-50"
                 >
                   Add Site
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditing && editingShortcut && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#1A1A1A] border border-white/10 p-6 rounded-3xl w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200 relative">
+            <button 
+                onClick={closeEditModal}
+                className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+            >
+                <X size={20} />
+            </button>
+            <h3 className="text-xl font-semibold text-white mb-6">{editingShortcut.type === 'folder' ? 'Edit Folder' : 'Edit Shortcut'}</h3>
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">Name</label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                  placeholder={editingShortcut.type === 'folder' ? "e.g. Work Sites" : "e.g. YouTube"}
+                />
+              </div>
+              {editingShortcut.type !== 'folder' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-400 mb-1 uppercase tracking-wider">URL</label>
+                  <input
+                    type="text"
+                    value={editUrl}
+                    onChange={(e) => setEditUrl(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                    placeholder="https://example.com"
+                    autoFocus
+                  />
+                </div>
+              )}
+              <div className="flex gap-3 mt-8">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!editName}
+                  className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-colors font-medium disabled:opacity-50"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

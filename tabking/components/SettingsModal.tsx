@@ -214,14 +214,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                        <div>
                            <div className="flex justify-between mb-1">
                                <span className="text-xs text-gray-500">Horizontal Gap</span>
-                               <span className="text-xs text-blue-400">{settings.gridConfig.gapX || 24}px</span>
+                               <span className="text-xs text-blue-400">{settings.gridConfig.gapX || 0}px</span>
                            </div>
                            <input
                             type="range"
                             min="0"
                             max="64"
                             step="4"
-                            value={settings.gridConfig.gapX !== undefined ? settings.gridConfig.gapX : 24}
+                            value={settings.gridConfig.gapX !== undefined ? settings.gridConfig.gapX : 0}
                             onChange={(e) => onUpdateSettings({ 
                                 gridConfig: { ...settings.gridConfig, gapX: parseInt(e.target.value) } 
                             })}
@@ -232,14 +232,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                        <div>
                            <div className="flex justify-between mb-1">
                                <span className="text-xs text-gray-500">Vertical Gap</span>
-                               <span className="text-xs text-blue-400">{settings.gridConfig.gapY || 24}px</span>
+                               <span className="text-xs text-blue-400">{settings.gridConfig.gapY || 0}px</span>
                            </div>
                            <input
                             type="range"
                             min="0"
                             max="64"
                             step="4"
-                            value={settings.gridConfig.gapY !== undefined ? settings.gridConfig.gapY : 24}
+                            value={settings.gridConfig.gapY !== undefined ? settings.gridConfig.gapY : 0}
                             onChange={(e) => onUpdateSettings({ 
                                 gridConfig: { ...settings.gridConfig, gapY: parseInt(e.target.value) } 
                             })}

@@ -5,14 +5,15 @@ import SearchBar from './components/SearchBar';
 import ShortcutGrid from './components/ShortcutGrid';
 import SettingsModal from './components/SettingsModal';
 import { AppSettings, SearchEngineType, Shortcut, DEFAULT_SHORTCUTS } from './types';
+import { preloadSearchEngineFavicons } from './constants';
 
 const STORAGE_KEY = 'aerotab_settings';
 const SHORTCUTS_KEY = 'aerotab_shortcuts';
 
 const DEFAULT_SETTINGS: AppSettings = {
   backgroundImage: null,
-  blurLevel: 2, 
-  gridConfig: { rows: 4, cols: 6, iconSize: 84, gapX: 24, gapY: 24 },
+  blurLevel: 1, 
+  gridConfig: { rows: 4, cols: 8, iconSize: 84, gapX: 0, gapY: 0 },
   defaultEngine: SearchEngineType.GOOGLE,
 };
 
@@ -29,6 +30,11 @@ function App() {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [time, setTime] = useState(new Date());
+
+  // Preload search engine favicons on app load (now using local icons, no network requests)
+  useEffect(() => {
+    preloadSearchEngineFavicons().catch(console.error);
+  }, []);
 
   // Clock
   useEffect(() => {
@@ -55,6 +61,12 @@ function App() {
 
   const removeShortcut = (id: string) => {
     setShortcuts(prev => prev.filter(s => s.id !== id));
+  };
+
+  const editShortcut = (id: string, title: string, url: string) => {
+    setShortcuts(prev => prev.map(s => 
+      s.id === id ? { ...s, title, url } : s
+    ));
   };
 
   // Reorder logic
@@ -169,7 +181,7 @@ function App() {
         style={{
           backgroundImage: settings.backgroundImage 
             ? `url(${settings.backgroundImage})` 
-            : 'url(https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=3270&auto=format&fit=crop)',
+            : 'url(/bg.jpg)',
           filter: `blur(${settings.blurLevel}px) brightness(0.8)`,
           transform: 'scale(1.05)' 
         }}
@@ -179,7 +191,7 @@ function App() {
       <div className="fixed inset-0 z-0 bg-black/20" />
 
       {/* Main Content */}
-      <div className="relative z-10 w-full flex flex-col items-center max-w-5xl px-4 gap-8 pt-[10vh] animate-in fade-in zoom-in-95 duration-700">
+      <div className="relative z-10 w-full flex flex-col items-center max-w-5xl px-4 gap-8 pt-[10vh]">
         
         {/* Clock */}
         <div className="text-center">
@@ -203,6 +215,7 @@ function App() {
           gridConfig={settings.gridConfig}
           onAddShortcut={addShortcut}
           onRemoveShortcut={removeShortcut}
+          onEditShortcut={editShortcut}
           onReorderShortcuts={handleReorder}
           onMergeShortcuts={handleMerge}
           onRemoveFromFolder={handleRemoveFromFolder}
