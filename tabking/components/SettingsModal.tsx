@@ -1,6 +1,6 @@
 
 import React, { useRef, useState } from 'react';
-import { X, Image as ImageIcon, Layout, Upload, Download, Save } from 'lucide-react';
+import { X, Image as ImageIcon, Layout, Upload, Download, Save, Settings, ExternalLink } from 'lucide-react';
 import { AppSettings, Shortcut } from '../types';
 
 interface SettingsModalProps {
@@ -12,7 +12,7 @@ interface SettingsModalProps {
   onImport: (data: { settings: AppSettings; shortcuts: Shortcut[] }) => void;
 }
 
-type TabType = 'background' | 'layout' | 'backup';
+type TabType = 'general' | 'background' | 'layout' | 'backup';
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ 
   isOpen, 
@@ -24,7 +24,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('background');
+  const [activeTab, setActiveTab] = useState<TabType>('general');
 
   if (!isOpen) return null;
 
@@ -97,6 +97,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <h2 className="text-2xl font-bold text-white mb-8">Settings</h2>
           <div className="space-y-2">
             <button 
+              onClick={() => setActiveTab('general')}
+              className={`w-full flex items-center p-3 rounded-xl font-medium transition-colors ${
+                activeTab === 'general' ? 'bg-blue-600/20 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <Settings size={18} className="mr-3" /> General
+            </button>
+            <button 
               onClick={() => setActiveTab('background')}
               className={`w-full flex items-center p-3 rounded-xl font-medium transition-colors ${
                 activeTab === 'background' ? 'bg-blue-600/20 text-blue-400' : 'text-gray-400 hover:bg-white/5 hover:text-white'
@@ -127,6 +135,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="flex-1 p-8 overflow-y-auto relative">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-semibold text-white">
+                {activeTab === 'general' && 'General Settings'}
                 {activeTab === 'background' && 'Background & Appearance'}
                 {activeTab === 'layout' && 'Grid Layout'}
                 {activeTab === 'backup' && 'Import & Export'}
@@ -137,6 +146,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
 
           <div className="space-y-8">
+            {activeTab === 'general' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                {/* Open in New Tab Toggle */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Link Behavior</label>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center">
+                      <ExternalLink size={18} className="text-blue-400 mr-3" />
+                      <div>
+                        <span className="text-white font-medium block">Open links in new tab</span>
+                        <span className="text-xs text-gray-400">When enabled, bookmark links will open in a new browser tab</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => onUpdateSettings({ openInNewTab: !settings.openInNewTab })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        settings.openInNewTab ? 'bg-blue-600' : 'bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          settings.openInNewTab ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {activeTab === 'background' && (
               <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                 {/* Background Upload */}

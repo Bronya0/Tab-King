@@ -10,6 +10,7 @@ const FAILED_FAVICONS = new Set<string>();
 interface ShortcutGridProps {
   shortcuts: Shortcut[];
   gridConfig: GridConfig;
+  openInNewTab: boolean;
   onAddShortcut: (shortcut: Shortcut) => void;
   onRemoveShortcut: (id: string) => void;
   onEditShortcut: (id: string, title: string, url: string) => void;
@@ -108,19 +109,7 @@ const FolderPreview = ({ children }: { children: Shortcut[] }) => {
     )
 }
 
-const ShortcutItem = ({ 
-    shortcut, 
-    onRemove, 
-    onEdit,
-    onClickFolder,
-    isMergeTarget,
-    isReorderTarget,
-    onItemDragStart,
-    onItemDragOver,
-    onItemDragLeave,
-    onItemDrop,
-    size
-}: { 
+const ShortcutItem: React.FC<{ 
     shortcut: Shortcut, 
     onRemove: (id: string) => void,
     onEdit: (id: string) => void,
@@ -131,9 +120,61 @@ const ShortcutItem = ({
     onItemDragOver: (e: React.DragEvent, id: string) => void,
     onItemDragLeave: (e: React.DragEvent) => void,
     onItemDrop: (e: React.DragEvent, id: string) => void,
-    size: number
+    size: number,
+    openInNewTab: boolean
+}> = ({ 
+    shortcut, 
+    onRemove, 
+    onEdit,
+    onClickFolder,
+    isMergeTarget,
+    isReorderTarget,
+    onItemDragStart,
+    onItemDragOver,
+    onItemDragLeave,
+    onItemDrop,
+    size,
+    openInNewTab
 }) => {
   const isFolder = shortcut.type === 'folder';
+  const [showContextMenu, setShowContextMenu] = useState(false);
+  const contextMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 处理右键点击显示上下文菜单
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowContextMenu(true);
+    
+    // 清除之前的超时
+    if (contextMenuTimeoutRef.current) {
+      clearTimeout(contextMenuTimeoutRef.current);
+    }
+    
+    // 3秒后自动隐藏菜单
+    contextMenuTimeoutRef.current = setTimeout(() => {
+      setShowContextMenu(false);
+    }, 3000);
+  };
+
+  // 处理鼠标离开隐藏菜单
+  const handleMouseLeave = () => {
+    if (contextMenuTimeoutRef.current) {
+      clearTimeout(contextMenuTimeoutRef.current);
+    }
+    setShowContextMenu(false);
+  };
+
+  // 清理超时
+  useEffect(() => {
+    return () => {
+      if (contextMenuTimeoutRef.current) {
+        clearTimeout(contextMenuTimeoutRef.current);
+      }
+    };
+  }, []);
+
+
 
   return (
     <div 
@@ -146,6 +187,8 @@ const ShortcutItem = ({
         onDragOver={(e) => onItemDragOver(e, shortcut.id)}
         onDragLeave={onItemDragLeave}
         onDrop={(e) => onItemDrop(e, shortcut.id)}
+        onContextMenu={handleContextMenu}
+        onMouseLeave={handleMouseLeave}
     >
         {/* Reorder Indicator Bar */}
         {isReorderTarget && !isMergeTarget && (
@@ -153,7 +196,17 @@ const ShortcutItem = ({
         )}
 
       <button
-        onClick={() => isFolder ? onClickFolder(shortcut) : window.location.href = shortcut.url}
+        onClick={() => {
+          if (isFolder) {
+            onClickFolder(shortcut);
+          } else {
+            if (openInNewTab) {
+              window.open(shortcut.url, '_blank');
+            } else {
+              window.location.href = shortcut.url;
+            }
+          }
+        }}
         className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] hover:scale-110 active:scale-95 group-hover:z-10
             ${isMergeTarget ? 'scale-125 z-20 ring-4 ring-blue-500/30 bg-white/10' : ''}
         `}
@@ -179,7 +232,9 @@ const ShortcutItem = ({
             e.stopPropagation();
             onEdit(shortcut.id);
         }}
-        className="absolute top-1 left-3 p-1.5 bg-blue-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-200 transform hover:scale-110 shadow-lg z-20 hover:bg-blue-600"
+        className={`absolute top-1 left-3 p-1.5 bg-blue-500 rounded-full text-white transition-all duration-200 transform hover:scale-110 shadow-lg z-20 hover:bg-blue-600 ${
+          showContextMenu ? 'opacity-100' : 'opacity-0'
+        }`}
         title="Edit"
       >
         <Edit size={12} strokeWidth={3} />
@@ -191,7 +246,9 @@ const ShortcutItem = ({
             e.stopPropagation();
             onRemove(shortcut.id);
         }}
-        className="absolute top-1 right-3 p-1.5 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-200 transform hover:scale-110 shadow-lg z-20 hover:bg-red-600"
+        className={`absolute top-1 right-3 p-1.5 bg-red-500 rounded-full text-white transition-all duration-200 transform hover:scale-110 shadow-lg z-20 hover:bg-red-600 ${
+          showContextMenu ? 'opacity-100' : 'opacity-0'
+        }`}
         title="Remove"
       >
         <X size={12} strokeWidth={3} />
@@ -209,7 +266,8 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
     onReorderShortcuts,
     onMergeShortcuts,
     onRemoveFromFolder,
-    onMoveToRoot
+    onMoveToRoot,
+    openInNewTab
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -226,6 +284,34 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
   
   // Folder Modal State
   const [openFolder, setOpenFolder] = useState<Shortcut | null>(null);
+  
+  // Context menu states for folder items
+  const [folderItemContextMenus, setFolderItemContextMenus] = useState<Set<string>>(new Set());
+  const folderItemTimeoutRefs = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  
+  // Update open folder when shortcuts change
+  useEffect(() => {
+    if (openFolder) {
+      const updatedFolder = shortcuts.find(s => s.id === openFolder.id);
+      if (updatedFolder && updatedFolder.type === 'folder') {
+        setOpenFolder(updatedFolder);
+      } else {
+        // Folder was deleted or became empty, close it
+        setOpenFolder(null);
+      }
+    }
+  }, [shortcuts, openFolder?.id]); // Only depend on shortcuts and the current folder ID
+  
+  // Cleanup effect for folder item timeouts
+  useEffect(() => {
+    return () => {
+      // 清理所有文件夹项的超时
+      folderItemTimeoutRefs.current.forEach(timeout => {
+        if (timeout) clearTimeout(timeout);
+      });
+      folderItemTimeoutRefs.current.clear();
+    };
+  }, []);
   
   // Defaults in case they are missing from config
   const iconSize = gridConfig.iconSize || 84;
@@ -357,6 +443,43 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
       e.dataTransfer.effectAllowed = 'move';
   };
 
+  // 处理文件夹项的右键点击
+  const handleFolderItemContextMenu = (itemId: string) => {
+    setFolderItemContextMenus(prev => new Set([...prev, itemId]));
+    
+    // 清除之前的超时
+    const existingTimeout = folderItemTimeoutRefs.current.get(itemId);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+    }
+    
+    // 3秒后自动隐藏菜单
+    const timeout = setTimeout(() => {
+      setFolderItemContextMenus(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
+      });
+      folderItemTimeoutRefs.current.delete(itemId);
+    }, 3000);
+    
+    folderItemTimeoutRefs.current.set(itemId, timeout);
+  };
+
+  // 处理文件夹项的鼠标离开
+  const handleFolderItemMouseLeave = (itemId: string) => {
+    const timeout = folderItemTimeoutRefs.current.get(itemId);
+    if (timeout) {
+      clearTimeout(timeout);
+      folderItemTimeoutRefs.current.delete(itemId);
+    }
+    setFolderItemContextMenus(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(itemId);
+      return newSet;
+    });
+  };
+
   const handleBackdropDrop = (e: React.DragEvent) => {
       e.preventDefault();
       const folderData = e.dataTransfer.getData('folder-item');
@@ -386,7 +509,7 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
       >
         {shortcuts.map((shortcut) => (
           <ShortcutItem 
-            key={shortcut.id} 
+            key={shortcut.id}
             shortcut={shortcut} 
             onRemove={onRemoveShortcut}
             onEdit={handleEditShortcut}
@@ -398,6 +521,7 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
             isMergeTarget={mergeTargetId === shortcut.id}
             isReorderTarget={dragOverId === shortcut.id && mergeTargetId !== shortcut.id}
             size={iconSize}
+            openInNewTab={openInNewTab}
           />
         ))}
 
@@ -551,20 +675,36 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
                             className="relative group flex flex-col items-center cursor-grab active:cursor-grabbing"
                             draggable={true}
                             onDragStart={(e) => handleFolderItemDragStart(e, item.id)}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleFolderItemContextMenu(item.id);
+                            }}
+                            onMouseLeave={() => handleFolderItemMouseLeave(item.id)}
                         >
-                             <a
-                                href={item.url}
-                                className="flex flex-col items-center p-2 rounded-xl transition-transform hover:scale-105 pointer-events-none" 
-                                onClick={(e) => e.preventDefault()} 
+                             <button
+                                onClick={() => {
+                                    if (openInNewTab) {
+                                        window.open(item.url, '_blank');
+                                    } else {
+                                        window.location.href = item.url;
+                                    }
+                                }}
+                                className="flex flex-col items-center p-2 rounded-xl transition-transform hover:scale-105"
                              >
                                 <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2 overflow-hidden bg-white/5 ring-1 ring-white/10">
                                      <ShortcutIcon url={item.url} title={item.title} />
                                 </div>
                                 <span className="text-xs text-white/80 truncate max-w-[80px]">{item.title}</span>
-                             </a>
+                             </button>
                              <button
-                                onClick={() => onRemoveFromFolder(openFolder.id, item.id)}
-                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRemoveFromFolder(openFolder.id, item.id);
+                                }}
+                                className={`absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 transition-opacity ${
+                                  folderItemContextMenus.has(item.id) ? 'opacity-100' : 'opacity-0'
+                                }`}
                              >
                                 <X size={10} />
                              </button>

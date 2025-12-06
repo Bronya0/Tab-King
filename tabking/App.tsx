@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   blurLevel: 1, 
   gridConfig: { rows: 4, cols: 8, iconSize: 84, gapX: 0, gapY: 0 },
   defaultEngine: SearchEngineType.GOOGLE,
+  openInNewTab: true,
 };
 
 function App() {
@@ -213,6 +214,7 @@ function App() {
         <ShortcutGrid 
           shortcuts={shortcuts} 
           gridConfig={settings.gridConfig}
+          openInNewTab={settings.openInNewTab}
           onAddShortcut={addShortcut}
           onRemoveShortcut={removeShortcut}
           onEditShortcut={editShortcut}

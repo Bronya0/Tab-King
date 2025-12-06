@@ -35,6 +35,7 @@ export interface AppSettings {
   blurLevel: number;
   gridConfig: GridConfig;
   defaultEngine: SearchEngineType;
+  openInNewTab: boolean;
 }
 
 export const DEFAULT_SHORTCUTS: Shortcut[] = [
