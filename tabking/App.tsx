@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Github } from 'lucide-react';
 import SearchBar from './components/SearchBar';
 import ShortcutGrid from './components/ShortcutGrid';
 import SettingsModal from './components/SettingsModal';
 import { AppSettings, SearchEngineType, Shortcut, DEFAULT_SHORTCUTS } from './types';
 import { preloadSearchEngineFavicons } from './constants';
+import { ToolsPanel } from './tools';
 
 const STORAGE_KEY = 'aerotab_settings';
 const SHORTCUTS_KEY = 'aerotab_shortcuts';
@@ -26,7 +27,12 @@ function App() {
 
   const [shortcuts, setShortcuts] = useState<Shortcut[]>(() => {
     const saved = localStorage.getItem(SHORTCUTS_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_SHORTCUTS;
+    const loadedShortcuts = saved ? JSON.parse(saved) : DEFAULT_SHORTCUTS;
+    
+    // 调试：检查加载的快捷方式数据
+    console.log('Loaded shortcuts:', loadedShortcuts);
+    
+    return loadedShortcuts;
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -94,6 +100,10 @@ function App() {
       
       // If items not found or dragging folder onto folder (optional restriction), return
       if (!draggedItem || !dropTarget || draggedItem.id === dropTarget.id) return prev;
+      
+      // 调试：检查拖拽的数据
+      console.log('handleMerge - draggedItem:', draggedItem);
+      console.log('handleMerge - dropTarget:', dropTarget);
       
       // Prevent nesting folders inside folders for simplicity in this version
       if (draggedItem.type === 'folder' && dropTarget.type === 'folder') {
@@ -225,13 +235,31 @@ function App() {
         />
       </div>
 
-      {/* Settings Toggle - Fixed to viewport */}
-      <button 
-        onClick={() => setIsSettingsOpen(true)}
-        className="fixed bottom-6 left-6 p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 z-50 group shadow-lg border border-white/5"
-      >
-        <SettingsIcon size={24} className="group-hover:rotate-45 transition-transform duration-500" />
-      </button>
+      {/* Top Right Controls */}
+      <div className="fixed top-6 right-6 z-50 flex gap-3">
+        {/* Settings Toggle */}
+        <button 
+          onClick={() => setIsSettingsOpen(true)}
+          className="p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 group shadow-lg border border-white/5"
+          title="设置"
+        >
+          <SettingsIcon size={20} className="group-hover:rotate-45 transition-transform duration-500" />
+        </button>
+
+        {/* Tools Toggle */}
+        <ToolsPanel />
+
+        {/* Copyright Info - GitHub */}
+        <a 
+          href="https://github.com/Bronya0/Tab-King" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 group shadow-lg border border-white/5"
+          title="GitHub项目"
+        >
+          <Github size={20} className="group-hover:rotate-12 transition-transform duration-300" />
+        </a>
+      </div>
 
       {/* Settings Modal */}
       <SettingsModal 
@@ -242,6 +270,8 @@ function App() {
         onUpdateSettings={updateSettings}
         onImport={handleImport}
       />
+
+
     </div>
   );
 }

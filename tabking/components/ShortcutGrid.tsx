@@ -20,20 +20,33 @@ interface ShortcutGridProps {
   onMoveToRoot: (folderId: string, itemId: string) => void;
 }
 
-const ShortcutIcon = ({ url, title, size = 'default' }: { url: string, title: string, size?: 'default' | 'small' }) => {
-  const faviconUrl = getFaviconUrl(url);
-  const [imgError, setImgError] = useState(FAILED_FAVICONS.has(faviconUrl));
+const ShortcutIcon = ({ url, title, icon, size = 'default' }: { url: string, title: string, icon?: string, size?: 'default' | 'small' }) => {
+  // 优先使用定义的本地图标
+  const localIcon = icon;
+  const [imgError, setImgError] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  // 计算在线favicon URL，用于本地图标失败时的备用方案
+  const faviconUrl = React.useMemo(() => {
+    return localIcon ? '' : getFaviconUrl(url);
+  }, [localIcon, url]);
   
-  // Reset error state if url changes and check favicon asynchronously
+  // 重置错误状态并检查图标
   useEffect(() => {
+    // 如果有本地图标，直接设置为无错误状态，不进行任何网络检查
+    if (localIcon) {
+      setImgError(false);
+      setIsChecking(false);
+      return;
+    }
+    
+    // 没有本地图标时，检查在线favicon
+    if (!faviconUrl) {
+      setImgError(true);
+      return;
+    }
+    
     const checkFavicon = async () => {
       if (FAILED_FAVICONS.has(faviconUrl)) {
-        setImgError(true);
-        return;
-      }
-      
-      if (!faviconUrl) {
         setImgError(true);
         return;
       }
@@ -48,7 +61,7 @@ const ShortcutIcon = ({ url, title, size = 'default' }: { url: string, title: st
           setImgError(false);
         }
       } catch (error) {
-        // If check fails, assume favicon doesn't exist
+        // 如果检查失败，假设favicon不存在
         FAILED_FAVICONS.add(faviconUrl);
         setImgError(true);
       } finally {
@@ -57,12 +70,12 @@ const ShortcutIcon = ({ url, title, size = 'default' }: { url: string, title: st
     };
     
     checkFavicon();
-  }, [faviconUrl, url]);
+  }, [localIcon, url, faviconUrl]);
 
   const iconSizeClass = size === 'default' ? 'w-[60%] h-[60%]' : 'w-full h-full'; // Inner icon relative size
   const textSizeClass = size === 'default' ? 'text-2xl' : 'text-[10px] leading-none';
 
-  // Show loading state while checking favicon
+  // 显示加载状态
   if (isChecking) {
     return (
       <div className={`${iconSizeClass} flex items-center justify-center bg-white/10 rounded-full animate-pulse`}>
@@ -71,7 +84,24 @@ const ShortcutIcon = ({ url, title, size = 'default' }: { url: string, title: st
     );
   }
 
-  if (!imgError) {
+  // 优先使用本地图标
+  if (localIcon && !imgError) {
+    return (
+      <img
+        src={localIcon}
+        alt={title}
+        className={`${iconSizeClass} object-cover rounded-full transition-transform duration-300`}
+        onError={() => {
+          // 本地图标加载失败，标记为错误并尝试在线favicon
+          setImgError(true);
+        }}
+        draggable={false}
+      />
+    );
+  }
+
+  // 本地图标不可用或加载失败，尝试在线favicon
+  if (!imgError && faviconUrl) {
     return (
       <img
         src={faviconUrl}
@@ -98,11 +128,14 @@ const ShortcutIcon = ({ url, title, size = 'default' }: { url: string, title: st
 const FolderPreview = ({ children }: { children: Shortcut[] }) => {
     const previewItems = children.slice(0, 4);
     
+    // 调试：检查子项数据
+    console.log('FolderPreview children:', children);
+    
     return (
         <div className="w-[60%] h-[60%] grid grid-cols-2 grid-rows-2 gap-1 p-2 bg-white/10 rounded-3xl backdrop-blur-sm">
             {previewItems.map((item) => (
                 <div key={item.id} className="relative w-full h-full rounded-full overflow-hidden">
-                    <ShortcutIcon url={item.url} title={item.title} size="small" />
+                    <ShortcutIcon url={item.url} title={item.title} icon={item.icon} size="small" />
                 </div>
             ))}
         </div>
@@ -218,7 +251,7 @@ const ShortcutItem: React.FC<{
           {isFolder && shortcut.children ? (
              <FolderPreview children={shortcut.children} />
           ) : (
-             <ShortcutIcon url={shortcut.url} title={shortcut.title} />
+             <ShortcutIcon url={shortcut.url} title={shortcut.title} icon={shortcut.icon} />
           )}
         </div>
         <span className="text-sm text-white/90 truncate text-center drop-shadow-md font-medium px-1 select-none" style={{ maxWidth: `${size + 20}px`}}>
@@ -341,7 +374,9 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
       id: Date.now().toString(),
       title: title,
       url: formattedUrl,
-      type: 'link'
+      type: 'link',
+      // 新添加的快捷方式不设置icon，后续会尝试获取在线favicon
+      icon: undefined
     };
 
     onAddShortcut(newShortcut);
@@ -693,7 +728,7 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
                                 className="flex flex-col items-center p-2 rounded-xl transition-transform hover:scale-105"
                              >
                                 <div className="w-16 h-16 rounded-full flex items-center justify-center mb-2 overflow-hidden bg-white/5 ring-1 ring-white/10">
-                                     <ShortcutIcon url={item.url} title={item.title} />
+                                     <ShortcutIcon url={item.url} title={item.title} icon={item.icon} />
                                 </div>
                                 <span className="text-xs text-white/80 truncate max-w-[80px]">{item.title}</span>
                              </button>

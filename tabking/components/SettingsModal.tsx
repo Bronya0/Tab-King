@@ -89,8 +89,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#1e1e1e]/90 backdrop-blur-2xl border border-white/10 w-full max-w-2xl h-[500px] rounded-3xl shadow-2xl flex overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose}>
+      <div className="bg-[#1e1e1e]/90 backdrop-blur-2xl border border-white/10 w-full max-w-2xl h-[500px] rounded-3xl shadow-2xl flex overflow-hidden" onClick={(e) => e.stopPropagation()}>
         
         {/* Sidebar */}
         <div className="w-1/3 bg-white/5 border-r border-white/5 p-6 flex flex-col">
