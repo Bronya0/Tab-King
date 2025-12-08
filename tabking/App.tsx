@@ -49,6 +49,61 @@ function App() {
     return () => clearInterval(timer);
   }, []);
 
+  // 禁用F12和右键菜单（仅在生产环境）
+  useEffect(() => {
+    // 检查是否为生产环境（打包后的版本）
+    const isProduction = !window.location.href.includes('localhost') && !window.location.href.includes('127.0.0.1');
+    
+    if (isProduction) {
+      // 禁用F12键和开发者工具快捷键
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // 禁用F12
+        if (e.key === 'F12') {
+          e.preventDefault();
+          console.log('F12 is disabled in production mode');
+          return;
+        }
+        
+        // 禁用Ctrl+Shift+I (开发者工具)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.keyCode === 73)) {
+          e.preventDefault();
+          console.log('Ctrl+Shift+I is disabled in production mode');
+          return;
+        }
+        
+        // 禁用Ctrl+Shift+J (控制台)
+        if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.keyCode === 74)) {
+          e.preventDefault();
+          console.log('Ctrl+Shift+J is disabled in production mode');
+          return;
+        }
+        
+        // 禁用Ctrl+U (查看源代码)
+        if (e.ctrlKey && (e.key === 'U' || e.keyCode === 85)) {
+          e.preventDefault();
+          console.log('Ctrl+U is disabled in production mode');
+          return;
+        }
+      };
+
+      // 禁用右键菜单
+      const handleContextMenu = (e: MouseEvent) => {
+        e.preventDefault();
+        console.log('Right-click menu is disabled in production mode');
+      };
+
+      // 添加事件监听器
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('contextmenu', handleContextMenu);
+
+      // 清理函数
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('contextmenu', handleContextMenu);
+      };
+    }
+  }, []);
+
   // Persistence
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
