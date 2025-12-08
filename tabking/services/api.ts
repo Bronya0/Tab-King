@@ -1,76 +1,76 @@
 import { SearchEngineType } from '../types';
 
-let jsonpCounter = 0;
-
 /**
- * A lightweight JSONP implementation to fetch suggestions from
- * search engines that don't support CORS for direct browser fetches.
+ * Fetch suggestions using fetch API with OpenSearch standard format
+ * All three interfaces return: [ "keyword", [ "suggestion1", "suggestion2", ... ] ]
  */
 export const fetchSuggestions = (
   query: string,
   engineType: SearchEngineType,
   urlTemplate: string
 ): Promise<string[]> => {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     if (!query.trim()) {
       resolve([]);
       return;
     }
 
-    const callbackName = `jsonp_callback_${Date.now()}_${jsonpCounter++}`;
-    
-    // Baidu requires a specific callback param name 'cb', others usually 'jsonp' or implied by structure
-    let src = urlTemplate + encodeURIComponent(query);
-    
-    if (engineType === SearchEngineType.BAIDU) {
-       src += `&cb=${callbackName}`;
-    } else if (engineType === SearchEngineType.BING) {
-       src += `&cb=${callbackName}`;
-    } else {
-       // Google's specific client=chrome returns JSON directly, but blocks CORS often.
-       // We use a different endpoint for JSONP or handle via simple fetch if in extension mode.
-       // For this web demo, Google is tricky without a proxy. 
-       // We will try the client=youtube method which often supports JSONP or standard callback
-       src = `https://suggestqueries.google.com/complete/search?client=youtube&q=${encodeURIComponent(query)}&jsonp=${callbackName}`;
-    }
-
-    // Create script
-    const script = document.createElement('script');
-    script.src = src;
-
-    // Window callback
-    (window as any)[callbackName] = (data: any) => {
-      let results: string[] = [];
+    try {
+      let url: string;
       
+      // 1. Google
       if (engineType === SearchEngineType.GOOGLE) {
-        // format: [query, [suggestions...], ...]
-        results = data[1].map((item: any) => item[0]);
-      } else if (engineType === SearchEngineType.BING) {
-        // format: { AS: { Results: [ { Suggests: [ { Txt: "..." } ] } ] } }
-        const suggests = data?.AS?.Results?.[0]?.Suggests;
-        if (suggests) {
-            results = suggests.map((s: any) => s.Txt);
-        }
-      } else if (engineType === SearchEngineType.BAIDU) {
-        // format: { s: ["..."] }
-        results = data.s || [];
+        url = `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(query)}`;
+      }
+      // 2. Baidu
+      else if (engineType === SearchEngineType.BAIDU) {
+        url = `https://suggestion.baidu.com/su?wd=${encodeURIComponent(query)}&action=opensearch`;
+      }
+      // 3. Bing
+      else if (engineType === SearchEngineType.BING) {
+        url = `https://api.bing.com/osjson.aspx?query=${encodeURIComponent(query)}`;
+      }
+      // Custom URL
+      else {
+        const isCustomUrl = urlTemplate.includes('{query}');
+        url = isCustomUrl ? urlTemplate.replace('{query}', encodeURIComponent(query)) : urlTemplate + encodeURIComponent(query);
       }
 
-      cleanup();
-      resolve(results.slice(0, 8)); // Limit to 8
-    };
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    // Error handling
-    script.onerror = () => {
-      cleanup();
+      let data;
+      
+      // Handle GBK encoded response for Baidu
+      if (engineType === SearchEngineType.BAIDU) {
+        const buffer = await response.arrayBuffer();
+        const decoder = new TextDecoder('gbk');
+        const text = decoder.decode(buffer);
+        
+        // Remove JSONP wrapper if present
+        const jsonStr = text.replace(/^\w+\(/, '').replace(/\);?$/, '');
+        data = JSON.parse(jsonStr);
+      } else {
+        data = await response.json();
+      }
+      let results: string[] = [];
+      
+      // Parse OpenSearch format: [ "keyword", [ "suggestion1", "suggestion2", ... ] ]
+      if (Array.isArray(data) && data.length >= 2 && Array.isArray(data[1])) {
+        results = data[1];
+      }
+      // Fallback for other formats
+      else if (engineType === SearchEngineType.BAIDU && data.s && Array.isArray(data.s)) {
+        results = data.s;
+      }
+      
+      resolve(results.slice(0, 8)); // Limit to 8 suggestions
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
       resolve([]);
-    };
-
-    function cleanup() {
-      if (script.parentNode) script.parentNode.removeChild(script);
-      delete (window as any)[callbackName];
     }
-
-    document.head.appendChild(script);
   });
 };

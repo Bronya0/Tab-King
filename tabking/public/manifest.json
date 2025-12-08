@@ -7,6 +7,14 @@
     "newtab": "index.html"
   },
   "permissions": [],
+  "host_permissions": [
+    "https://suggestqueries.google.com/*",
+    "https://api.bing.com/*",
+    "https://suggestion.baidu.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "icons": {
     "16": "favicon.ico",
     "48": "favicon.ico",

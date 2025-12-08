@@ -1,7 +1,8 @@
 
 import React, { useRef, useState } from 'react';
-import { X, Image as ImageIcon, Layout, Upload, Download, Save, Settings, ExternalLink } from 'lucide-react';
+import { X, Image as ImageIcon, Layout, Upload, Download, Save, Settings, ExternalLink, Search } from 'lucide-react';
 import { AppSettings, Shortcut } from '../types';
+import { SUGGEST_SERVERS } from '../constants';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -171,6 +172,58 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         }`}
                       />
                     </button>
+                  </div>
+                </div>
+
+                {/* Search Suggestions Server */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Search Suggestions</label>
+                  <div className="space-y-4">
+                    {/* Server Selection */}
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                      <div className="flex items-center">
+                        <Search size={18} className="text-blue-400 mr-3" />
+                        <div>
+                          <span className="text-white font-medium block">Suggestion Server</span>
+                          <span className="text-xs text-gray-400">Choose which service to use for search suggestions</span>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <select
+                          value={settings.suggestServer}
+                          onChange={(e) => onUpdateSettings({ suggestServer: e.target.value as any })}
+                          className="appearance-none bg-white/10 border border-white/20 rounded-lg px-3 py-2 pr-8 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors cursor-pointer hover:bg-white/15"
+                        >
+                          {Object.values(SUGGEST_SERVERS).map((server) => (
+                            <option key={server.value} value={server.value} className="bg-gray-800">
+                              {server.name}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Custom URL Input */}
+                    {settings.suggestServer === 'custom' && (
+                      <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                        <label className="text-white font-medium block mb-2">Custom Suggestion URL</label>
+                        <input
+                          type="text"
+                          value={settings.customSuggestUrl || ''}
+                          onChange={(e) => onUpdateSettings({ customSuggestUrl: e.target.value || null })}
+                          placeholder="https://example.com/suggest?q={query}"
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 transition-colors text-sm"
+                        />
+                        <p className="text-xs text-gray-400 mt-2">
+                          Use {'{query}'} as placeholder for search query. Leave empty to disable suggestions.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

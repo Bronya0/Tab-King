@@ -36,6 +36,8 @@ export interface AppSettings {
   gridConfig: GridConfig;
   defaultEngine: SearchEngineType;
   openInNewTab: boolean;
+  suggestServer: 'auto' | 'google' | 'bing' | 'baidu' | 'custom';
+  customSuggestUrl: string | null;
 }
 
 export const DEFAULT_SHORTCUTS: Shortcut[] = [

@@ -17,6 +17,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   gridConfig: { rows: 4, cols: 8, iconSize: 84, gapX: 0, gapY: 0 },
   defaultEngine: SearchEngineType.GOOGLE,
   openInNewTab: true,
+  suggestServer: 'auto',
+  customSuggestUrl: null,
 };
 
 function App() {
@@ -272,7 +274,9 @@ function App() {
         {/* Search */}
         <SearchBar 
           currentEngine={settings.defaultEngine} 
-          onEngineChange={handleEngineChange} 
+          onEngineChange={handleEngineChange}
+          suggestServer={settings.suggestServer}
+          customSuggestUrl={settings.customSuggestUrl}
         />
 
         {/* Shortcuts */}

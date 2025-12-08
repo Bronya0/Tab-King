@@ -7,9 +7,11 @@ import { fetchSuggestions } from '../services/api';
 interface SearchBarProps {
   currentEngine: SearchEngineType;
   onEngineChange: (engine: SearchEngineType) => void;
+  suggestServer?: 'auto' | 'google' | 'bing' | 'baidu' | 'custom';
+  customSuggestUrl?: string | null;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, suggestServer = 'auto', customSuggestUrl = null }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isFocused, setIsFocused] = useState(false);
@@ -19,11 +21,47 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange }) 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const engine = SEARCH_ENGINES[currentEngine];
 
+  // Get suggestion URL based on configuration
+  const getSuggestionUrl = () => {
+    if (suggestServer === 'custom' && customSuggestUrl) {
+      return customSuggestUrl;
+    }
+    
+    if (suggestServer === 'auto') {
+      return engine.suggestUrl;
+    }
+    
+    // Use specific search engine's suggestion URL
+    const targetEngine = SEARCH_ENGINES[suggestServer as SearchEngineType];
+    return targetEngine?.suggestUrl || engine.suggestUrl;
+  };
+
+  // Get suggestion engine type for API calls
+  const getSuggestionEngineType = (): SearchEngineType => {
+    if (suggestServer === 'custom') {
+      return currentEngine; // For custom URLs, use current engine's parsing logic
+    }
+    
+    if (suggestServer === 'auto') {
+      return currentEngine;
+    }
+    
+    return suggestServer as SearchEngineType;
+  };
+
   // Debounce suggestion fetching
   useEffect(() => {
     const timer = setTimeout(() => {
       if (query.trim()) {
-        fetchSuggestions(query, currentEngine, engine.suggestUrl).then((results) => {
+        const suggestionUrl = getSuggestionUrl();
+        const suggestionEngine = getSuggestionEngineType();
+        
+        // Replace {query} placeholder in custom URL
+        const finalUrl = suggestServer === 'custom' && customSuggestUrl 
+          ? customSuggestUrl.replace('{query}', encodeURIComponent(query))
+          : suggestionUrl;
+        
+        fetchSuggestions(query, suggestionEngine, finalUrl).then((results) => {
             setSuggestions(results);
             setSelectedIndex(-1); // Reset selection on new results
         });
@@ -34,7 +72,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange }) 
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [query, currentEngine, engine.suggestUrl]);
+  }, [query, currentEngine, suggestServer, customSuggestUrl]);
 
   // Click outside listener
   useEffect(() => {
@@ -150,9 +188,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange }) 
                 index === selectedIndex ? 'bg-white/20 text-white' : 'text-white/90 hover:bg-white/10'
               }`}
             >
-              <Search size={16} className={`mr-4 transition-colors ${index === selectedIndex ? 'text-white' : 'text-white/40 group-hover:text-white/80'}`} />
+              <Search size={18} className={`mr-4 transition-colors ${index === selectedIndex ? 'text-white' : 'text-white/40 group-hover:text-white/80'}`} />
               {/* Highlight matching part logic can be simple or strict. Here we just render text. */}
-              <span dangerouslySetInnerHTML={{ __html: item.replace(new RegExp(`(${query})`, 'gi'), '<span class="font-bold text-blue-400">$1</span>') }} />
+              <span className="text-base" dangerouslySetInnerHTML={{ __html: item.replace(new RegExp(`(${query})`, 'gi'), '<span class="font-bold text-blue-400">$1</span>') }} />
             </button>
           ))}
         </div>

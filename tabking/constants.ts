@@ -1,5 +1,15 @@
 import { SearchEngine, SearchEngineType } from './types';
 
+export const SUGGEST_SERVERS = {
+  auto: { name: 'Auto (跟随搜索引擎)', value: 'auto' },
+  google: { name: 'Google', value: 'google' },
+  bing: { name: 'Bing', value: 'bing' },
+  baidu: { name: 'Baidu', value: 'baidu' },
+  custom: { name: '自定义', value: 'custom' },
+} as const;
+
+export type SuggestServerType = keyof typeof SUGGEST_SERVERS;
+
 export const SEARCH_ENGINES: Record<SearchEngineType, SearchEngine> = {
   [SearchEngineType.GOOGLE]: {
     type: SearchEngineType.GOOGLE,
