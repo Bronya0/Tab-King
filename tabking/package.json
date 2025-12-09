@@ -9,7 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/qrcode.react": "^1.0.5",
+    "crypto-js": "^4.2.0",
     "lucide-react": "^0.555.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1"
   },

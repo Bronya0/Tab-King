@@ -50,7 +50,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       settings,
       shortcuts,
       exportedAt: new Date().toISOString(),
-      version: 1
+      version: 1,
+      appInfo: {
+        name: 'TabKing',
+        exportVersion: '1.0',
+        totalShortcuts: shortcuts.length
+      }
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -63,6 +68,58 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const validateSettings = (settings: any): settings is AppSettings => {
+    if (!settings || typeof settings !== 'object') return false;
+    
+    // 检查必需的配置项
+    const requiredKeys = ['backgroundImage', 'blurLevel', 'gridConfig', 'defaultEngine', 'openInNewTab', 'suggestServer', 'customSuggestUrl'];
+    const hasAllKeys = requiredKeys.every(key => key in settings);
+    if (!hasAllKeys) return false;
+    
+    // 验证gridConfig结构
+    if (!settings.gridConfig || typeof settings.gridConfig !== 'object') return false;
+    const gridKeys = ['rows', 'cols', 'iconSize', 'gapX', 'gapY'];
+    const hasAllGridKeys = gridKeys.every(key => key in settings.gridConfig);
+    if (!hasAllGridKeys) return false;
+    
+    // 验证数据类型
+    return (
+      (settings.backgroundImage === null || typeof settings.backgroundImage === 'string') &&
+      typeof settings.blurLevel === 'number' &&
+      typeof settings.gridConfig.rows === 'number' &&
+      typeof settings.gridConfig.cols === 'number' &&
+      typeof settings.gridConfig.iconSize === 'number' &&
+      typeof settings.gridConfig.gapX === 'number' &&
+      typeof settings.gridConfig.gapY === 'number' &&
+      typeof settings.defaultEngine === 'string' &&
+      typeof settings.openInNewTab === 'boolean' &&
+      typeof settings.suggestServer === 'string' &&
+      (settings.customSuggestUrl === null || typeof settings.customSuggestUrl === 'string')
+    );
+  };
+
+  const validateShortcuts = (shortcuts: any): shortcuts is Shortcut[] => {
+    if (!Array.isArray(shortcuts)) return false;
+    
+    return shortcuts.every(shortcut => {
+      if (!shortcut || typeof shortcut !== 'object') return false;
+      
+      const requiredKeys = ['id', 'title', 'url'];
+      const hasRequiredKeys = requiredKeys.every(key => key in shortcut);
+      if (!hasRequiredKeys) return false;
+      
+      // 验证数据类型
+      return (
+        typeof shortcut.id === 'string' &&
+        typeof shortcut.title === 'string' &&
+        typeof shortcut.url === 'string' &&
+        (shortcut.icon === undefined || typeof shortcut.icon === 'string') &&
+        (shortcut.type === undefined || shortcut.type === 'link' || shortcut.type === 'folder') &&
+        (shortcut.children === undefined || Array.isArray(shortcut.children))
+      );
+    });
+  };
+
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -71,19 +128,56 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     reader.onload = (event) => {
       try {
         const json = JSON.parse(event.target?.result as string);
-        if (json.settings && Array.isArray(json.shortcuts)) {
-            // Basic validation
-            onImport({ settings: json.settings, shortcuts: json.shortcuts });
-            alert('Configuration loaded successfully!');
-            onClose();
-        } else {
-            alert('Invalid configuration file format.');
+        
+        // 验证文件格式
+        if (!json || typeof json !== 'object') {
+          alert('无效的配置文件格式');
+          return;
         }
+        
+        // 验证应用信息（如果有）
+        if (json.appInfo && json.appInfo.name !== 'TabKing') {
+          if (!confirm('此配置文件可能来自其他应用，是否继续导入？')) {
+            return;
+          }
+        }
+        
+        // 验证版本兼容性（如果有版本信息）
+        if (json.version && json.version > 1) {
+          alert('配置文件版本过高，请更新应用后再尝试导入');
+          return;
+        }
+        
+        // 验证配置数据
+        if (!validateSettings(json.settings)) {
+          alert('配置文件中的设置数据无效或缺失');
+          return;
+        }
+        
+        if (!validateShortcuts(json.shortcuts)) {
+          alert('配置文件中的快捷方式数据无效');
+          return;
+        }
+        
+        // 确认导入
+        const shortcutCount = json.shortcuts?.length || 0;
+        const confirmMessage = `确定要导入配置文件吗？\n\n这将覆盖您当前的设置和 ${shortcutCount} 个快捷方式。`;
+        
+        if (confirm(confirmMessage)) {
+          onImport({ settings: json.settings, shortcuts: json.shortcuts });
+          alert('配置导入成功！');
+          onClose();
+        }
+        
       } catch (err) {
-        console.error(err);
-        alert('Failed to parse the configuration file.');
+        console.error('导入配置失败:', err);
+        alert('解析配置文件失败，请检查文件格式是否正确');
       }
       // Reset input
+      if (importInputRef.current) importInputRef.current.value = '';
+    };
+    reader.onerror = () => {
+      alert('读取文件失败');
       if (importInputRef.current) importInputRef.current.value = '';
     };
     reader.readAsText(file);
@@ -376,6 +470,43 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             {activeTab === 'backup' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 
+                {/* Current Configuration Summary */}
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="flex items-center mb-3">
+                        <Save className="text-purple-400 mr-3" size={24} />
+                        <div>
+                            <h4 className="text-white font-medium">Current Configuration</h4>
+                            <p className="text-xs text-gray-400">Overview of your current settings</p>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span className="text-gray-400">Shortcuts:</span>
+                            <span className="text-white ml-2">{shortcuts.length}</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-400">Background:</span>
+                            <span className="text-white ml-2">{settings.backgroundImage ? 'Custom' : 'Default'}</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-400">Blur Level:</span>
+                            <span className="text-white ml-2">{settings.blurLevel}px</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-400">Grid Size:</span>
+                            <span className="text-white ml-2">{settings.gridConfig.cols}×{settings.gridConfig.rows}</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-400">Icon Size:</span>
+                            <span className="text-white ml-2">{settings.gridConfig.iconSize}px</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-400">Search Engine:</span>
+                            <span className="text-white ml-2">{settings.defaultEngine}</span>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Export */}
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
                     <div className="flex items-center mb-3">
@@ -417,9 +548,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     />
                 </div>
                 
-                <p className="text-xs text-gray-500 text-center">
-                    Note: Importing will overwrite your current settings and shortcuts.
-                </p>
+                <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+                    <p className="text-xs text-yellow-200">
+                        <strong>⚠️ 注意:</strong> 导入将覆盖您当前的设置和快捷方式。建议在导入前导出当前配置作为备份。
+                    </p>
+                </div>
               </div>
             )}
           </div>
