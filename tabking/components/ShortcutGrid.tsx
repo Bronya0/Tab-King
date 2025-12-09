@@ -313,6 +313,7 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
   // DnD State
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState<string | null>(null);
+  const [isDragOverAddButton, setIsDragOverAddButton] = useState(false);
   const mergeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Folder Modal State
@@ -457,11 +458,28 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
   const handleDrop = (e: React.DragEvent, targetId: string) => {
       e.preventDefault();
       
+      // Handle regular shortcut dragging
       const draggedId = e.dataTransfer.getData('shortcut-id');
+      
+      // Handle folder item dragging
+      const folderData = e.dataTransfer.getData('folder-item');
       
       if (mergeTimerRef.current) clearTimeout(mergeTimerRef.current);
       
-      if (draggedId && draggedId !== targetId) {
+      if (folderData) {
+          // Handle folder item drop
+          const { folderId, itemId } = JSON.parse(folderData);
+          if (folderId && itemId) {
+              if (targetId === 'add-button') {
+                  // If dropped on add button, move to end
+                  onMoveToRoot(folderId, itemId);
+              } else if (itemId !== targetId) {
+                  // If dropped on another item, move to that position
+                  onMoveToRoot(folderId, itemId);
+              }
+          }
+      } else if (draggedId && draggedId !== targetId) {
+          // Handle regular shortcut drop
           if (mergeTargetId === targetId) {
               onMergeShortcuts(draggedId, targetId);
           } else {
@@ -469,6 +487,48 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
           }
       }
 
+      setDragOverId(null);
+      setMergeTargetId(null);
+      setIsDragOverAddButton(false);
+  };
+
+  // Handle dragging over the add button
+  const handleAddButtonDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOverAddButton(true);
+  };
+
+  const handleAddButtonDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOverAddButton(false);
+  };
+
+  const handleAddButtonDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      
+      // Handle regular shortcut dragging
+      const draggedId = e.dataTransfer.getData('shortcut-id');
+      
+      // Handle folder item dragging
+      const folderData = e.dataTransfer.getData('folder-item');
+      
+      if (mergeTimerRef.current) clearTimeout(mergeTimerRef.current);
+      
+      if (folderData) {
+          // Handle folder item drop on add button
+          const { folderId, itemId } = JSON.parse(folderData);
+          if (folderId && itemId) {
+              onMoveToRoot(folderId, itemId);
+          }
+      } else if (draggedId && shortcuts.length > 0) {
+          // Move the dragged shortcut to the end (before the add button)
+          const targetId = shortcuts[shortcuts.length - 1].id;
+          if (draggedId !== targetId) {
+              onReorderShortcuts(draggedId, targetId);
+          }
+      }
+
+      setIsDragOverAddButton(false);
       setDragOverId(null);
       setMergeTargetId(null);
   };
@@ -536,6 +596,20 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
           gridTemplateColumns: `repeat(${gridConfig.cols}, minmax(0, 1fr))`,
           gap: `${gapY}px ${gapX}px`
         }}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const folderData = e.dataTransfer.getData('folder-item');
+          if (folderData) {
+            const { folderId, itemId } = JSON.parse(folderData);
+            if (folderId && itemId) {
+              onMoveToRoot(folderId, itemId);
+            }
+          }
+          setDragOverId(null);
+          setMergeTargetId(null);
+          setIsDragOverAddButton(false);
+        }}
         onDragLeave={() => {
             setDragOverId(null);
             setMergeTargetId(null);
@@ -561,10 +635,26 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
         ))}
 
         {/* Add Button */}
-        <div className="relative flex flex-col items-center" style={{ width: `${iconSize + 20}px` }}>
+        <div 
+          className={`relative flex flex-col items-center transition-all duration-200 ${
+            isDragOverAddButton ? 'translate-x-2 opacity-80' : ''
+          }`}
+          style={{ width: `${iconSize + 20}px` }}
+          onDragOver={handleAddButtonDragOver}
+          onDragLeave={handleAddButtonDragLeave}
+          onDrop={handleAddButtonDrop}
+        >
+          {/* Drop Indicator for Add Button */}
+          {isDragOverAddButton && (
+            <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1 h-12 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] z-0 animate-pulse" />
+          )}
+          
           <button
             onClick={() => setIsAdding(true)}
-            className="flex flex-col items-center p-2 rounded-xl transition-all duration-300 opacity-50 hover:opacity-100 group hover:scale-110"
+            className={`flex flex-col items-center p-2 rounded-xl transition-all duration-300 opacity-50 hover:opacity-100 group hover:scale-110 ${
+              isDragOverAddButton ? 'ring-4 ring-blue-500/30 bg-white/10 scale-110' : ''
+            }`}
+            draggable={false}
           >
             <div 
                 className="rounded-full flex items-center justify-center bg-white/5 hover:bg-white/10 transition-colors"

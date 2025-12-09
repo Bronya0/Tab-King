@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wrench, Clock, Code, Palette, Hash, Key, X, FileText, Binary, Image as ImageIcon, FileCheck, Calculator, QrCode } from 'lucide-react';
+import { ToolCase, Clock, Code, Palette, Hash, Key, X, FileText, Binary, Image as ImageIcon, FileCheck, Calculator, QrCode } from 'lucide-react';
 import TimestampConverter from './TimestampConverter';
 import JsonFormatter from './JsonFormatter';
 import ColorPicker from './ColorPicker';
@@ -114,7 +114,7 @@ const ToolsPanel: React.FC = () => {
         className="p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 group shadow-lg border border-white/5"
         title="工具箱"
       >
-        <Wrench size={20} className="group-hover:rotate-45 transition-transform duration-500" />
+        <ToolCase size={20} className="group-hover:rotate-45 transition-transform duration-500" />
       </button>
 
       {/* 工具面板 - 新布局 */}
@@ -189,7 +189,7 @@ const ToolsPanel: React.FC = () => {
                   ) : (
                     <div className="flex items-center justify-center h-full min-h-[400px]">
                       <div className="text-center">
-                        <Wrench size={48} className="text-white/30 mx-auto mb-4" />
+                        <ToolCase size={48} className="text-white/30 mx-auto mb-4" />
                         <p className="text-white/60">请从左侧选择一个工具开始使用</p>
                       </div>
                     </div>

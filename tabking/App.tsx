@@ -212,22 +212,40 @@ function App() {
   // Handle moving item out of folder back to root
   const handleMoveToRoot = (folderId: string, itemId: string) => {
       setShortcuts(prev => {
+          const folderIndex = prev.findIndex(s => s.id === folderId);
           const folder = prev.find(s => s.id === folderId);
-          if (!folder || !folder.children) return prev;
+          if (!folder || !folder.children || folderIndex === -1) return prev;
 
           const itemToMove = folder.children.find(c => c.id === itemId);
           if (!itemToMove) return prev;
 
           // Remove from folder
-          const updatedShortcuts = prev.map(s => {
+          let updatedShortcuts = prev.map(s => {
               if (s.id === folderId && s.children) {
                   return { ...s, children: s.children.filter(c => c.id !== itemId) };
               }
               return s;
-          }).filter(s => s.type !== 'folder' || (s.children && s.children.length > 0)); // Clean up empty folders
+          });
 
-          // Add to root
-          return [...updatedShortcuts, itemToMove];
+          // Check if folder has only one item left after removal
+          const updatedFolder = updatedShortcuts.find(s => s.id === folderId);
+          if (updatedFolder && updatedFolder.children && updatedFolder.children.length === 1) {
+              // If folder has only one item left, unwrap the folder
+              const lastItem = updatedFolder.children[0];
+              updatedShortcuts = updatedShortcuts.filter(s => s.id !== folderId);
+              // Insert the last item at the original folder position, and add the moved item to the end
+              updatedShortcuts.splice(folderIndex, 0, lastItem);
+              updatedShortcuts.push(itemToMove);
+          } else if (updatedFolder && updatedFolder.children && updatedFolder.children.length === 0) {
+              // If folder is empty, remove it and add the moved item to the end
+              updatedShortcuts = updatedShortcuts.filter(s => s.id !== folderId);
+              updatedShortcuts.push(itemToMove);
+          } else {
+              // Add the moved item to the end
+              updatedShortcuts.push(itemToMove);
+          }
+
+          return updatedShortcuts;
       });
   };
 
@@ -296,6 +314,10 @@ function App() {
 
       {/* Top Right Controls */}
       <div className="fixed top-6 right-6 z-50 flex gap-3">
+
+        {/* Tools Toggle */}
+        <ToolsPanel />
+
         {/* Settings Toggle */}
         <button 
           onClick={() => setIsSettingsOpen(true)}
@@ -305,8 +327,7 @@ function App() {
           <SettingsIcon size={20} className="group-hover:rotate-45 transition-transform duration-500" />
         </button>
 
-        {/* Tools Toggle */}
-        <ToolsPanel />
+    
 
         {/* Copyright Info - GitHub */}
         <a 
