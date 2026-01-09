@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Github } from 'lucide-react';
+import { Settings as SettingsIcon, Github, StickyNote, X } from 'lucide-react';
 import SearchBar from './components/SearchBar';
 import ShortcutGrid from './components/ShortcutGrid';
 import SettingsModal from './components/SettingsModal';
 import { AppSettings, SearchEngineType, Shortcut, DEFAULT_SHORTCUTS } from './types';
 import { preloadSearchEngineFavicons } from './constants';
 import { ToolsPanel } from './tools';
+import Notepad from './tools/Notepad';
 
 const STORAGE_KEY = 'aerotab_settings';
 const SHORTCUTS_KEY = 'aerotab_shortcuts';
@@ -38,6 +39,11 @@ function App() {
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNotepadOpen, setIsNotepadOpen] = useState(false);
+  const [showNotepadBadge, setShowNotepadBadge] = useState(() => {
+    const saved = localStorage.getItem('tabking_notepad_badge_clicked');
+    return saved !== 'true';
+  });
   const [time, setTime] = useState(new Date());
 
   // Preload search engine favicons on app load (now using local icons, no network requests)
@@ -318,6 +324,31 @@ function App() {
         {/* Tools Toggle */}
         <ToolsPanel />
 
+        {/* Notepad Toggle */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              if (showNotepadBadge) {
+                setShowNotepadBadge(false);
+                localStorage.setItem('tabking_notepad_badge_clicked', 'true');
+              }
+              setIsNotepadOpen(true);
+            }}
+            className="p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 group shadow-lg border border-white/5"
+            title="记事本"
+          >
+            <StickyNote size={20} className="group-hover:-translate-y-0.5 transition-transform duration-300" />
+          </button>
+          {showNotepadBadge && (
+            <div
+              className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-full shadow-lg flex items-center justify-center transition-all duration-300 animate-pulse z-10"
+              title="新功能，点击查看"
+            >
+              NEW
+            </div>
+          )}
+        </div>
+
         {/* Settings Toggle */}
         <button 
           onClick={() => setIsSettingsOpen(true)}
@@ -340,6 +371,22 @@ function App() {
           <Github size={20} className="group-hover:rotate-12 transition-transform duration-300" />
         </a>
       </div>
+
+      {/* Notepad Modal */}
+      {isNotepadOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsNotepadOpen(false)} />
+          <div className="relative w-[900px] max-w-[90vw]">
+            <Notepad />
+            <button
+              onClick={() => setIsNotepadOpen(false)}
+              className="absolute -top-10 right-0 text-white/70 hover:text-white transition-colors duration-200"
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Settings Modal */}
       <SettingsModal 

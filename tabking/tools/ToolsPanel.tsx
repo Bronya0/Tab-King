@@ -23,6 +23,10 @@ interface Tool {
 const ToolsPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [showBadge, setShowBadge] = useState(() => {
+    const saved = localStorage.getItem('tabking_tools_badge_clicked');
+    return saved !== 'true';
+  });
 
   const tools: Tool[] = [
     {
@@ -106,16 +110,39 @@ const ToolsPanel: React.FC = () => {
 
   const activeToolData = tools.find(tool => tool.id === activeTool);
 
+  const handleBadgeClick = () => {
+    setShowBadge(false);
+    localStorage.setItem('tabking_tools_badge_clicked', 'true');
+  };
+
+  const handleOpenTools = () => {
+    if (showBadge) {
+      setShowBadge(false);
+      localStorage.setItem('tabking_tools_badge_clicked', 'true');
+    }
+    setIsOpen(true);
+  };
+
   return (
     <>
       {/* 工具按钮 */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 group shadow-lg border border-white/5"
-        title="工具箱"
-      >
-        <ToolCase size={20} className="group-hover:rotate-45 transition-transform duration-500" />
-      </button>
+      <div className="relative">
+        <button
+          onClick={handleOpenTools}
+          className="p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-white transition-all duration-300 group shadow-lg border border-white/5"
+          title="工具箱"
+        >
+          <ToolCase size={20} className="group-hover:rotate-45 transition-transform duration-500" />
+        </button>
+        {showBadge && (
+          <div
+            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded-full shadow-lg flex items-center justify-center transition-all duration-300 animate-pulse z-10 cursor-pointer"
+            title="新功能，点击查看"
+          >
+            NEW
+          </div>
+        )}
+      </div>
 
       {/* 工具面板 - 新布局 */}
       {isOpen && (
