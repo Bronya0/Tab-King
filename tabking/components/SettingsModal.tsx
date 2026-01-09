@@ -4,13 +4,21 @@ import { X, Image as ImageIcon, Layout, Upload, Download, Save, Settings, Extern
 import { AppSettings, Shortcut } from '../types';
 import { SUGGEST_SERVERS } from '../constants';
 
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  updatedAt: number;
+}
+
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   settings: AppSettings;
   shortcuts: Shortcut[];
+  notes?: Note[];
   onUpdateSettings: (newSettings: Partial<AppSettings>) => void;
-  onImport: (data: { settings: AppSettings; shortcuts: Shortcut[] }) => void;
+  onImport: (data: { settings: AppSettings; shortcuts: Shortcut[]; notes?: Note[] }) => void;
 }
 
 type TabType = 'general' | 'background' | 'layout' | 'backup';
@@ -20,6 +28,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose, 
   settings, 
   shortcuts,
+  notes = [],
   onUpdateSettings,
   onImport
 }) => {
@@ -49,12 +58,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     const data = {
       settings,
       shortcuts,
+      notes,
       exportedAt: new Date().toISOString(),
-      version: 1,
+      version: 2,
       appInfo: {
         name: 'TabKing',
-        exportVersion: '1.0',
-        totalShortcuts: shortcuts.length
+        exportVersion: '2.0',
+        totalShortcuts: shortcuts.length,
+        totalNotes: notes.length
       }
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -120,6 +131,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     });
   };
 
+  const validateNotes = (notes: any): notes is Note[] => {
+    if (!Array.isArray(notes)) return false;
+    
+    return notes.every(note => {
+      if (!note || typeof note !== 'object') return false;
+      
+      const requiredKeys = ['id', 'title', 'content', 'updatedAt'];
+      const hasRequiredKeys = requiredKeys.every(key => key in note);
+      if (!hasRequiredKeys) return false;
+      
+      return (
+        typeof note.id === 'string' &&
+        typeof note.title === 'string' &&
+        typeof note.content === 'string' &&
+        typeof note.updatedAt === 'number'
+      );
+    });
+  };
+
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -142,8 +172,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           }
         }
         
-        // 验证版本兼容性（如果有版本信息）
-        if (json.version && json.version > 1) {
+        // 验证版本兼容性（如果有版本信息，v2支持记事本）
+        if (json.version && json.version > 2) {
           alert('配置文件版本过高，请更新应用后再尝试导入');
           return;
         }
@@ -159,12 +189,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           return;
         }
         
+        // 验证记事本数据（可选，v2及以上版本）
+        const notes = json.version >= 2 && json.notes ? json.notes : [];
+        if (notes.length > 0 && !validateNotes(notes)) {
+          alert('配置文件中的记事本数据无效');
+          return;
+        }
+        
         // 确认导入
         const shortcutCount = json.shortcuts?.length || 0;
-        const confirmMessage = `确定要导入配置文件吗？\n\n这将覆盖您当前的设置和 ${shortcutCount} 个快捷方式。`;
+        const notesCount = notes.length || 0;
+        const confirmMessage = notesCount > 0 
+          ? `确定要导入配置文件吗？\n\n这将覆盖您当前的设置、${shortcutCount}个快捷方式和${notesCount}条记事本。`
+          : `确定要导入配置文件吗？\n\n这将覆盖您当前的设置和 ${shortcutCount} 个快捷方式。`;
         
         if (confirm(confirmMessage)) {
-          onImport({ settings: json.settings, shortcuts: json.shortcuts });
+          onImport({ settings: json.settings, shortcuts: json.shortcuts, notes });
           alert('配置导入成功！');
           onClose();
         }

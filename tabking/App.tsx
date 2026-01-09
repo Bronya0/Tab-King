@@ -11,6 +11,14 @@ import Notepad from './tools/Notepad';
 
 const STORAGE_KEY = 'aerotab_settings';
 const SHORTCUTS_KEY = 'aerotab_shortcuts';
+const NOTES_KEY = 'tabking_notes';
+
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  updatedAt: number;
+}
 
 const DEFAULT_SETTINGS: AppSettings = {
   backgroundImage: null,
@@ -36,6 +44,11 @@ function App() {
     console.log('Loaded shortcuts:', loadedShortcuts);
     
     return loadedShortcuts;
+  });
+
+  const [notes, setNotes] = useState<Note[]>(() => {
+    const saved = localStorage.getItem(NOTES_KEY);
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -120,6 +133,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem(SHORTCUTS_KEY, JSON.stringify(shortcuts));
   }, [shortcuts]);
+
+  useEffect(() => {
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }, [notes]);
 
   const updateSettings = (newPartial: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newPartial }));
@@ -255,9 +272,10 @@ function App() {
       });
   };
 
-  const handleImport = (data: { settings: AppSettings; shortcuts: Shortcut[] }) => {
+  const handleImport = (data: { settings: AppSettings; shortcuts: Shortcut[]; notes?: any[] }) => {
     if (data.settings) setSettings(data.settings);
     if (data.shortcuts) setShortcuts(data.shortcuts);
+    if (data.notes) setNotes(data.notes);
   };
 
   const handleEngineChange = (type: SearchEngineType) => {
@@ -394,6 +412,7 @@ function App() {
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         shortcuts={shortcuts}
+        notes={notes}
         onUpdateSettings={updateSettings}
         onImport={handleImport}
       />
