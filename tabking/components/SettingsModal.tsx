@@ -83,7 +83,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     if (!settings || typeof settings !== 'object') return false;
     
     // 检查必需的配置项
-    const requiredKeys = ['backgroundImage', 'blurLevel', 'gridConfig', 'defaultEngine', 'openInNewTab', 'suggestServer', 'customSuggestUrl'];
+    const requiredKeys = ['backgroundImage', 'blurLevel', 'gridConfig', 'defaultEngine', 'openInNewTab', 'suggestServer', 'customSuggestUrl', 'snowflakesEnabled'];
     const hasAllKeys = requiredKeys.every(key => key in settings);
     if (!hasAllKeys) return false;
     
@@ -105,6 +105,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       typeof settings.defaultEngine === 'string' &&
       typeof settings.openInNewTab === 'boolean' &&
       typeof settings.suggestServer === 'string' &&
+      typeof settings.snowflakesEnabled === 'boolean' &&
       (settings.customSuggestUrl === null || typeof settings.customSuggestUrl === 'string')
     );
   };
@@ -358,6 +359,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                         </p>
                       </div>
                     )}
+                  </div>
+                </div>
+
+                {/* Snowflakes Toggle */}
+                <div className="space-y-3">
+                  <label className="text-sm font-medium text-gray-400 uppercase tracking-wider">Visual Effects</label>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center">
+                      <div className="text-blue-400 mr-3 text-lg">❄️</div>
+                      <div>
+                        <span className="text-white font-medium block">Snowflakes</span>
+                        <span className="text-xs text-gray-400">Show winter snowflake animation on background</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => onUpdateSettings({ snowflakesEnabled: !settings.snowflakesEnabled })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        settings.snowflakesEnabled ? 'bg-blue-600' : 'bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          settings.snowflakesEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
               </div>

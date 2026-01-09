@@ -41,6 +41,7 @@ export interface AppSettings {
   openInNewTab: boolean;
   suggestServer: 'auto' | 'google' | 'bing' | 'baidu' | 'custom';
   customSuggestUrl: string | null;
+  snowflakesEnabled: boolean;
 }
 
 export const DEFAULT_SHORTCUTS: Shortcut[] = [

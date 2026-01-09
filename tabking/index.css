@@ -1,1 +1,27 @@
 @import "tailwindcss";
+
+@keyframes snowfall {
+  0% {
+    transform: translateY(-5vh) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: var(--opacity, 0.6);
+  }
+  50% {
+    transform: translateY(50vh) translateX(var(--drift, 0)) rotate(180deg);
+    opacity: var(--opacity, 0.6);
+  }
+  95% {
+    opacity: var(--opacity, 0.6);
+  }
+  100% {
+    transform: translateY(105vh) translateX(calc(var(--drift, 0) * 1.5)) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-snowfall {
+  animation: snowfall linear infinite;
+  will-change: transform, opacity;
+}
