@@ -3,6 +3,9 @@ export enum SearchEngineType {
   GOOGLE = 'google',
   BING = 'bing',
   BAIDU = 'baidu',
+  ZHIHU = 'zhihu',
+  GITHUB = 'github',
+  BILIBILI = 'bilibili',
 }
 
 export interface SearchEngine {

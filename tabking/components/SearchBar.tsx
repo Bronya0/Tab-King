@@ -133,7 +133,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
 
           {/* Engine Dropdown */}
           {showEngineMenu && (
-            <div className="absolute top-full left-0 mt-2 w-32 bg-gray-900/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl py-1 z-50">
+            <div className="absolute top-full left-0 mt-2 w-40 bg-gray-900/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl py-1 z-50">
               {Object.values(SEARCH_ENGINES).map((eng) => (
                 <button
                   key={eng.type}

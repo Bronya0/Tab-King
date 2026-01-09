@@ -32,6 +32,27 @@ export const SEARCH_ENGINES: Record<SearchEngineType, SearchEngine> = {
     suggestUrl: 'https://suggestion.baidu.com/su?wd=',
     logo: '/svg/baidu-icon.svg',
   },
+  [SearchEngineType.ZHIHU]: {
+    type: SearchEngineType.ZHIHU,
+    name: '知乎',
+    searchUrl: 'https://www.zhihu.com/search?type=content&q=',
+    suggestUrl: '',
+    logo: '/svg/www.zhihu.com.png',
+  },
+  [SearchEngineType.GITHUB]: {
+    type: SearchEngineType.GITHUB,
+    name: 'GitHub',
+    searchUrl: 'https://github.com/search?q=',
+    suggestUrl: '',
+    logo: '/svg/github.svg',
+  },
+  [SearchEngineType.BILIBILI]: {
+    type: SearchEngineType.BILIBILI,
+    name: '哔哩哔哩',
+    searchUrl: 'https://search.bilibili.com/all?keyword=',
+    suggestUrl: '',
+    logo: '/svg/www.bilibili.com.jpg',
+  },
 };
 
 // Pre-check search engine favicons on app load (now using local icons, no network requests needed)
