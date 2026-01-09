@@ -376,7 +376,7 @@ function App() {
       {isNotepadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsNotepadOpen(false)} />
-          <div className="relative w-[900px] max-w-[90vw]">
+          <div className="relative w-[90vw] max-w-[1200px] h-[85vh]">
             <Notepad />
             <button
               onClick={() => setIsNotepadOpen(false)}
