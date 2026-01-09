@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Github, StickyNote, X } from 'lucide-react';
+import { Settings as SettingsIcon, Github, StickyNote, X, Heart, QrCode } from 'lucide-react';
 import SearchBar from './components/SearchBar';
 import ShortcutGrid from './components/ShortcutGrid';
 import SettingsModal from './components/SettingsModal';
@@ -54,6 +54,7 @@ function App() {
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDonateOpen, setIsDonateOpen] = useState(false);
   const [isNotepadOpen, setIsNotepadOpen] = useState(false);
   const [showNotepadBadge, setShowNotepadBadge] = useState(() => {
     const saved = localStorage.getItem('tabking_notepad_badge_clicked');
@@ -381,7 +382,14 @@ function App() {
           <SettingsIcon size={20} className="group-hover:rotate-45 transition-transform duration-500" />
         </button>
 
-    
+        {/* Donate Toggle */}
+        <button 
+          onClick={() => setIsDonateOpen(true)}
+          className="p-3 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md text-white/60 hover:text-red-400 transition-all duration-300 group shadow-lg border border-white/5"
+          title="打赏支持"
+        >
+          <Heart size={20} className="group-hover:scale-110 transition-transform duration-300" />
+        </button>
 
         {/* Copyright Info - GitHub */}
         <a 
@@ -422,6 +430,40 @@ function App() {
         onImport={handleImport}
       />
 
+      {/* Donate Modal */}
+      {isDonateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsDonateOpen(false)} />
+          <div className="relative bg-[#232524] rounded-2xl p-8 max-w-md mx-4 shadow-2xl border border-white/10">
+            <button
+              onClick={() => setIsDonateOpen(false)}
+              className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-4">
+                <Heart size={32} className="text-red-400" />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">支持 Tab-King</h2>
+              <p className="text-gray-400 mb-6 text-sm leading-relaxed">
+                感谢你使用 Tab-King！这个项目是我利用业余时间用心打造的，
+                希望能帮助每一位追求效率的朋友。如果你觉得这个小工具对你有
+                哪怕一点点帮助，欢迎扫码打赏，你的支持是我持续更新最大的动力！
+                每一份打赏，我都会心怀感激 ❤️
+              </p>
+              <div className="bg-white/5 rounded-xl p-4 inline-block">
+                <img 
+                  src="/wechat.png" 
+                  alt="微信打赏二维码" 
+                  className="w-48 h-48 object-contain rounded-lg"
+                />
+              </div>
+              <p className="text-gray-500 text-xs mt-4">打开微信扫一扫</p>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
