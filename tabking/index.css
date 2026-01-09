@@ -25,3 +25,25 @@
   animation: snowfall linear infinite;
   will-change: transform, opacity;
 }
+
+@keyframes rainfall {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--opacity, 0.4);
+  }
+  90% {
+    opacity: var(--opacity, 0.4);
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.animate-rain {
+  animation: rainfall linear infinite;
+  will-change: transform, opacity;
+}

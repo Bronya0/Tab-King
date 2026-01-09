@@ -5,6 +5,7 @@ import SearchBar from './components/SearchBar';
 import ShortcutGrid from './components/ShortcutGrid';
 import SettingsModal from './components/SettingsModal';
 import Snowflakes from './components/Snowflakes';
+import Rain from './components/Rain';
 import { AppSettings, SearchEngineType, Shortcut, DEFAULT_SHORTCUTS } from './types';
 import { preloadSearchEngineFavicons } from './constants';
 import { ToolsPanel } from './tools';
@@ -30,12 +31,20 @@ const DEFAULT_SETTINGS: AppSettings = {
   suggestServer: 'auto',
   customSuggestUrl: null,
   snowflakesEnabled: true,
+  rainEnabled: false,
 };
 
 function App() {
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed.rainEnabled !== 'boolean') {
+        parsed.rainEnabled = false;
+      }
+      return parsed;
+    }
+    return DEFAULT_SETTINGS;
   });
 
   const [shortcuts, setShortcuts] = useState<Shortcut[]>(() => {
@@ -305,6 +314,7 @@ function App() {
 
       {/* Snowflakes Effect */}
       <Snowflakes enabled={settings.snowflakesEnabled} count={60} />
+      <Rain enabled={settings.rainEnabled} intensity={100} />
 
       {/* Main Content */}
       <div className="relative z-10 w-full flex flex-col items-center max-w-5xl px-4 gap-8 pt-[10vh]">

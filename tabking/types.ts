@@ -42,6 +42,7 @@ export interface AppSettings {
   suggestServer: 'auto' | 'google' | 'bing' | 'baidu' | 'custom';
   customSuggestUrl: string | null;
   snowflakesEnabled: boolean;
+  rainEnabled: boolean;
 }
 
 export const DEFAULT_SHORTCUTS: Shortcut[] = [

@@ -106,6 +106,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       typeof settings.openInNewTab === 'boolean' &&
       typeof settings.suggestServer === 'string' &&
       typeof settings.snowflakesEnabled === 'boolean' &&
+      typeof settings.rainEnabled === 'boolean' &&
       (settings.customSuggestUrl === null || typeof settings.customSuggestUrl === 'string')
     );
   };
@@ -382,6 +383,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       <span
                         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                           settings.snowflakesEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center">
+                      <div className="text-blue-400 mr-3 text-lg">🌧️</div>
+                      <div>
+                        <span className="text-white font-medium block">Rain</span>
+                        <span className="text-xs text-gray-400">Show gentle rain animation on background</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => onUpdateSettings({ rainEnabled: !settings.rainEnabled })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        settings.rainEnabled ? 'bg-blue-600' : 'bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          settings.rainEnabled ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
                     </button>

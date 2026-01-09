@@ -42,7 +42,7 @@ const Snowflakes: React.FC<SnowflakesProps> = ({ enabled, count = 80 }) => {
             left: `${flake.left}%`,
             top: `${flake.top}%`,
             fontSize: `${flake.size}px`,
-            opacity: flake.opacity,
+            '--opacity': flake.opacity,
             animationDuration: `${flake.duration}s`,
             animationDelay: `${flake.delay}s`,
             '--drift': `${flake.drift}px`,
