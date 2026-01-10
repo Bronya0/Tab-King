@@ -35,11 +35,11 @@ const Rain: React.FC<RainProps> = ({ enabled, intensity = 100 }) => {
       {raindrops.map((drop) => (
         <div
           key={drop.id}
-          className="absolute bg-gradient-to-b from-gray-300/60 to-gray-500/40 rounded-full animate-rain"
+          className="absolute bg-gray-400/50 rounded-full animate-rain"
           style={{
             left: `${drop.left}%`,
             top: '-20px',
-            width: '3px',
+            width: '2px',
             height: `${drop.height}px`,
             '--opacity': drop.opacity,
             animationDuration: `${drop.animationDuration}s`,

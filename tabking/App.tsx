@@ -39,10 +39,7 @@ function App() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (typeof parsed.rainEnabled !== 'boolean') {
-        parsed.rainEnabled = false;
-      }
-      return parsed;
+      return { ...DEFAULT_SETTINGS, ...parsed };
     }
     return DEFAULT_SETTINGS;
   });

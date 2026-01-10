@@ -182,7 +182,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
           {suggestions.map((item, index) => (
             <button
               key={index}
-              onClick={() => handleSearch(item)}
+              onClick={() => handleSuggestionSelect(item)}
               onMouseEnter={() => setSelectedIndex(index)}
               className={`flex items-center w-full px-5 py-3 text-left transition-colors group ${
                 index === selectedIndex ? 'bg-white/20 text-white' : 'text-white/90 hover:bg-white/10'
