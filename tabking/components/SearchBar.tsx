@@ -91,6 +91,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
     window.location.href = `${engine.searchUrl}${encodeURIComponent(text)}`;
   };
 
+  const handleSuggestionSelect = (suggestion: string) => {
+    setQuery(suggestion);
+    setSuggestions([]);
+    setSelectedIndex(-1);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Navigation
     if (e.key === 'ArrowDown') {
