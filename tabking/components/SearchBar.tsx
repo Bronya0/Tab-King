@@ -7,7 +7,7 @@ import { fetchSuggestions } from '../services/api';
 interface SearchBarProps {
   currentEngine: SearchEngineType;
   onEngineChange: (engine: SearchEngineType) => void;
-  suggestServer?: 'auto' | 'google' | 'bing' | 'baidu' | 'custom';
+  suggestServer?: 'auto' | 'google' | 'bing' | 'baidu' | 'yandex' | 'custom';
   customSuggestUrl?: string | null;
 }
 
@@ -16,8 +16,9 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [showEngineMenu, setShowEngineMenu] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1); // -1 means input is focused
-  
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isNavigating, setIsNavigating] = useState(false);
+
   const wrapperRef = useRef<HTMLDivElement>(null);
   const engine = SEARCH_ENGINES[currentEngine];
 
@@ -51,6 +52,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
 
   // Debounce suggestion fetching
   useEffect(() => {
+    if (isNavigating) return;
+
     const timer = setTimeout(() => {
       if (query.trim()) {
         const suggestionUrl = getSuggestionUrl();
@@ -63,7 +66,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
         
         fetchSuggestions(query, suggestionEngine, finalUrl).then((results) => {
             setSuggestions(results);
-            setSelectedIndex(-1); // Reset selection on new results
+            setSelectedIndex(-1);
         });
       } else {
         setSuggestions([]);
@@ -72,7 +75,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [query, currentEngine, suggestServer, customSuggestUrl]);
+  }, [query, currentEngine, suggestServer, customSuggestUrl, isNavigating]);
 
   // Click outside listener
   useEffect(() => {
@@ -98,22 +101,38 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      setIsNavigating(true);
+    }
+
     // Navigation
     if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+      e.preventDefault();
+      const newIndex = selectedIndex < suggestions.length - 1 ? selectedIndex + 1 : selectedIndex;
+      setSelectedIndex(newIndex);
+      if (newIndex >= 0) {
+        setQuery(suggestions[newIndex]);
+      }
     } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex(prev => (prev > -1 ? prev - 1 : -1));
+      e.preventDefault();
+      const newIndex = selectedIndex > -1 ? selectedIndex - 1 : -1;
+      setSelectedIndex(newIndex);
+      if (newIndex >= 0) {
+        setQuery(suggestions[newIndex]);
+      }
     } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-            handleSearch(suggestions[selectedIndex]);
-        } else {
-            handleSearch(query);
-        }
+      e.preventDefault();
+      setIsNavigating(false);
+      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+        handleSearch(suggestions[selectedIndex]);
+      } else {
+        handleSearch(query);
+      }
     } else if (e.key === 'Escape') {
-        setIsFocused(false);
+      setIsFocused(false);
+      setIsNavigating(false);
+    } else {
+      setIsNavigating(false);
     }
   };
 
@@ -189,7 +208,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
             <button
               key={index}
               onClick={() => handleSuggestionSelect(item)}
-              onMouseEnter={() => setSelectedIndex(index)}
+              onMouseEnter={() => {
+                setSelectedIndex(index);
+                setIsNavigating(false);
+              }}
               className={`flex items-center w-full px-5 py-3 text-left transition-colors group ${
                 index === selectedIndex ? 'bg-white/20 text-white' : 'text-white/90 hover:bg-white/10'
               }`}

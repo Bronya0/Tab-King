@@ -5,6 +5,7 @@ export const SUGGEST_SERVERS = {
   google: { name: 'Google', value: 'google' },
   bing: { name: 'Bing', value: 'bing' },
   baidu: { name: 'Baidu', value: 'baidu' },
+  yandex: { name: 'Yandex', value: 'yandex' },
   custom: { name: '自定义', value: 'custom' },
 } as const;
 
@@ -32,6 +33,13 @@ export const SEARCH_ENGINES: Record<SearchEngineType, SearchEngine> = {
     suggestUrl: 'https://suggestion.baidu.com/su?wd=',
     logo: '/svg/baidu-icon.svg',
   },
+  [SearchEngineType.YANDEX]: {
+    type: SearchEngineType.YANDEX,
+    name: 'Yandex',
+    searchUrl: 'https://yandex.com/search?text=',
+    suggestUrl: 'https://suggest.yandex.com/suggest-ya.cgi?part=',
+    logo: '/svg/yandex.png',
+  },
   [SearchEngineType.ZHIHU]: {
     type: SearchEngineType.ZHIHU,
     name: '知乎',
@@ -52,6 +60,14 @@ export const SEARCH_ENGINES: Record<SearchEngineType, SearchEngine> = {
     searchUrl: 'https://search.bilibili.com/all?keyword=',
     suggestUrl: '',
     logo: '/svg/www.bilibili.com.jpg',
+  },
+  [SearchEngineType.DOUYIN]: {
+    type: SearchEngineType.DOUYIN,
+    name: '抖音',
+    // Use base path; SearchBar will append encoded query
+    searchUrl: 'https://www.douyin.com/jingxuan/search/',
+    suggestUrl: '',
+    logo: '/svg/douyin.png',
   },
 };
 
@@ -89,9 +105,6 @@ export const checkFaviconExists = async (url: string): Promise<boolean> => {
         // Image failed to load, favicon doesn't exist or is inaccessible
         resolve(false);
       };
-      
-      // Set a timeout to prevent hanging
-      img.timeout = 3000;
       
       // Try to load the favicon
       img.src = faviconUrl;

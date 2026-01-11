@@ -455,8 +455,7 @@ function App() {
               <h2 className="text-xl font-bold text-white mb-2">支持 Tab-King</h2>
               <p className="text-gray-400 mb-6 text-sm leading-relaxed">
                 感谢你使用 Tab-King！这个项目是我利用业余时间用心打造的，
-                希望能帮助每一位追求效率的朋友。如果你觉得这个小工具对你有
-                哪怕一点点帮助，欢迎扫码打赏，你的支持是我持续更新最大的动力！
+                希望能帮助每一位追求效率的朋友。如果你觉得这个小工具对你有一点点帮助，欢迎扫码打赏，你的支持是我持续更新最大的动力！
                 每一份打赏，我都会心怀感激 ❤️
               </p>
               <div className="bg-white/5 rounded-xl p-4 inline-block">

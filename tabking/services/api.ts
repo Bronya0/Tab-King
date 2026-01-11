@@ -30,6 +30,11 @@ export const fetchSuggestions = (
       else if (engineType === SearchEngineType.BING) {
         url = `https://api.bing.com/osjson.aspx?query=${encodeURIComponent(query)}`;
       }
+      // 4. Yandex
+      else if (engineType === SearchEngineType.YANDEX) {
+        // Use Yandex suggest endpoint; v=4 often returns JSON
+        url = `https://suggest.yandex.com/suggest-ya.cgi?part=${encodeURIComponent(query)}&v=4&uil=en`;
+      }
       // Custom URL
       else {
         const isCustomUrl = urlTemplate.includes('{query}');
@@ -54,6 +59,7 @@ export const fetchSuggestions = (
         const jsonStr = text.replace(/^\w+\(/, '').replace(/\);?$/, '');
         data = JSON.parse(jsonStr);
       } else {
+        // Try to parse JSON; Yandex may return JSON directly
         data = await response.json();
       }
       let results: string[] = [];
@@ -66,7 +72,15 @@ export const fetchSuggestions = (
       else if (engineType === SearchEngineType.BAIDU && data.s && Array.isArray(data.s)) {
         results = data.s;
       }
-      
+      // Yandex format sometimes returns an object like { "prefix": "...", "suggest": ["a","b"] } or [query, [suggestions...]]
+      else if (engineType === SearchEngineType.YANDEX) {
+        if (Array.isArray(data) && data.length >= 2 && Array.isArray(data[1])) {
+          results = data[1];
+        } else if (data && Array.isArray((data as any).suggest)) {
+          results = (data as any).suggest;
+        }
+      }
+
       resolve(results.slice(0, 8)); // Limit to 8 suggestions
     } catch (error) {
       console.error('Error fetching suggestions:', error);
