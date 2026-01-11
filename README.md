@@ -1,7 +1,7 @@
 # Tab King - 功能强大的自定义新标签页扩展
 已上架edge商店：[Tab-king](https://microsoftedge.microsoft.com/addons/detail/tab-king/gjfaiiokimilnlmifafjhhcmjeakmmdf)
 
-chrome请自行下载dist压缩包，扩展管理那里选择加载解压缩的扩展
+chrome请右侧release自行下载dist压缩包，扩展管理那里选择加载解压缩的扩展
 
 ## 预览
 ![局部截取_20251209_195606_compressed](https://github.com/user-attachments/assets/b592c376-d8d8-43a8-9a77-dbfdb25ff3f6)
