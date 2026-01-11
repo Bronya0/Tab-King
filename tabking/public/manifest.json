@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab King",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A beautiful custom new tab page with search functionality",
   "chrome_url_overrides": {
     "newtab": "index.html"
