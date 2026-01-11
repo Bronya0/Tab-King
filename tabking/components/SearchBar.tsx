@@ -11,6 +11,20 @@ interface SearchBarProps {
   customSuggestUrl?: string | null;
 }
 
+const escapeHtml = (text: string): string => {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+};
+
+const highlightQuery = (text: string, query: string): string => {
+  if (!query.trim()) return escapeHtml(text);
+  const escapedText = escapeHtml(text);
+  const escapedQuery = escapeHtml(query);
+  const regex = new RegExp(`(${escapedQuery})`, 'gi');
+  return escapedText.replace(regex, '<span class="font-bold text-blue-400">$1</span>');
+};
+
 const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, suggestServer = 'auto', customSuggestUrl = null }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -218,7 +232,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
             >
               <Search size={18} className={`mr-4 transition-colors ${index === selectedIndex ? 'text-white' : 'text-white/40 group-hover:text-white/80'}`} />
               {/* Highlight matching part logic can be simple or strict. Here we just render text. */}
-              <span className="text-base" dangerouslySetInnerHTML={{ __html: item.replace(new RegExp(`(${query})`, 'gi'), '<span class="font-bold text-blue-400">$1</span>') }} />
+              <span className="text-base" dangerouslySetInnerHTML={{ __html: highlightQuery(item, query) }} />
             </button>
           ))}
         </div>

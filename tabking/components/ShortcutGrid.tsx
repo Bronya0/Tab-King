@@ -356,9 +356,16 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
     e.preventDefault();
     if (!newUrl) return;
 
-    let formattedUrl = newUrl;
+    let formattedUrl = newUrl.trim();
     if (!/^https?:\/\//i.test(formattedUrl)) {
       formattedUrl = 'https://' + formattedUrl;
+    }
+
+    const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:'];
+    const lowerUrl = formattedUrl.toLowerCase();
+    if (dangerousProtocols.some(protocol => lowerUrl.startsWith(protocol))) {
+      alert('Invalid URL protocol');
+      return;
     }
 
     let title = newName;
@@ -416,14 +423,20 @@ const ShortcutGrid: React.FC<ShortcutGridProps> = ({
       if (!editingShortcut || !editName) return;
 
       if (editingShortcut.type === 'folder') {
-          // For folders, only update the name
           onEditShortcut(editingShortcut.id, editName, editingShortcut.url || '');
       } else {
-          // For links, update both name and URL
-          let formattedUrl = editUrl;
+          let formattedUrl = editUrl.trim();
           if (!/^https?:\/\//i.test(formattedUrl)) {
               formattedUrl = 'https://' + formattedUrl;
           }
+          
+          const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:'];
+          const lowerUrl = formattedUrl.toLowerCase();
+          if (dangerousProtocols.some(protocol => lowerUrl.startsWith(protocol))) {
+              alert('Invalid URL protocol');
+              return;
+          }
+          
           onEditShortcut(editingShortcut.id, editName, formattedUrl);
       }
       closeEditModal();
