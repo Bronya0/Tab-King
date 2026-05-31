@@ -34,6 +34,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
   const [isNavigating, setIsNavigating] = useState(false);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const isComposingRef = useRef(false);
   const engine = SEARCH_ENGINES[currentEngine];
 
   // Get suggestion URL based on configuration
@@ -115,6 +116,12 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // 输入法组合中时忽略 Enter 键，防止误触发搜索
+    if (e.key === 'Enter' && isComposingRef.current) {
+      e.preventDefault();
+      return;
+    }
+
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       setIsNavigating(true);
     }
@@ -196,7 +203,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ currentEngine, onEngineChange, su
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
+          onBlur={() => { isComposingRef.current = false; }}
           onKeyDown={handleKeyDown}
+          onCompositionStart={() => isComposingRef.current = true}
+          onCompositionEnd={() => isComposingRef.current = false}
           placeholder={`Search with ${engine.name}...`}
           className="flex-1 h-full bg-transparent border-none outline-none px-4 text-white placeholder-white/50 text-lg"
           autoFocus
