@@ -70,7 +70,7 @@ tabking/                       # 前端项目根目录
 ├── public/                    # 静态资源
 │   ├── bg.jpg                 # 默认壁纸
 │   ├── favicon.ico            # 站点图标
-│   ├── manifest.json          # Chrome 扩展 Manifest V3 配置（版本 v1.2.0）
+│   ├── manifest.json          # Chrome 扩展 Manifest V3 配置（版本 v1.3.0）
 │   ├── wechat.png             # 微信打赏二维码
 │   └── svg/                   # 搜索引擎图标 + 网站快捷方式图标（本地预置，共 23 个）
 │       ├── google-icon.svg / bing-icon.svg / baidu-icon.svg
